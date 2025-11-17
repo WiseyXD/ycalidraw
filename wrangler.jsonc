@@ -12,7 +12,16 @@
 	},
 	"observability": {
 		"enabled": true
-	}
+	},
+	"durable_objects": {
+    "bindings": [
+      {
+        "class_name": "YcalidrawWebSocketServer",
+        "name": "DURABLE_OBJECT",
+      },
+    ],
+	},
+	"migrations": [{ "tag": "v1", "new_classes": ["YcalidrawWebSocketServer"] }],	
 	/**
 	 * Smart Placement
 	 * Docs: https://developers.cloudflare.com/workers/configuration/smart-placement/#smart-placement
