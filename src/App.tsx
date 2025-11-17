@@ -36,7 +36,7 @@ function App() {
       <div className='card'>
         <button
           onClick={() => {
-            fetch('/increment?name=aryan')
+            fetch('/new/12')
               .then((res) => res.json() as Promise<{ name: string }>)
               .then((data) => setName(data.name))
           }}
