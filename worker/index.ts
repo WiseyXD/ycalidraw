@@ -12,13 +12,13 @@ app.get("/new/:roomId", async (c) => {
     }, 400)
   }
   // A stub is a client Object used to send messages to the Durable Object.
+  //@ts-ignore
   let stub = c.env.DURABLE_OBJECT.getByName(roomId)
   let count = null;
   count = await stub.increment();
+  let name = count.toString();
 
-  return c.json({
-    message: count
-  }, 200)
+  return c.json({ "name": name })
 
 })
 
