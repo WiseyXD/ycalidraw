@@ -68,23 +68,24 @@ export class YcalidrawWebSocketServer extends DurableObject {
 
     // Upon receiving a message from the client, the server replies with the same message, the session ID of the connection,
     // and the total number of connections with the "[Durable Object]: " prefix
-    ws.send(
-      `[Durable Object] message: ${message}, from: ${session.id}, to: the initiating client. Total connections: ${this.sessions.size}`,
-    );
+    // ws.send(
+    //   `[Durable Object] message: ${message}, from: ${session.id}, to: the initiating client. Total connections: ${this.sessions.size}`,
+    // );
 
     // Send a message to all WebSocket connections, loop over all the connected WebSockets.
-    this.sessions.forEach((attachment, connectedWs) => {
-      connectedWs.send(
-        `[Durable Object] message: ${message}, from: ${session.id}, to: all clients. Total connections: ${this.sessions.size}`,
-      );
-    });
+    // this.sessions.forEach((attachment, connectedWs) => {
+    //   connectedWs.send(
+    //     `[Durable Object] message: ${message}, from: ${session.id}, to: all clients. Total connections: ${this.sessions.size}`,
+    //   );
+    // });
 
     // Send a message to all WebSocket connections except the connection (ws),
     // loop over all the connected WebSockets and filter out the connection (ws).
     this.sessions.forEach((attachment, connectedWs) => {
       if (connectedWs !== ws) {
         connectedWs.send(
-          `[Durable Object] message: ${message}, from: ${session.id}, to: all clients except the initiating client. Total connections: ${this.sessions.size}`,
+          // `[Durable Object] message: ${message}, from: ${session.id}, to: all clients except the initiating client. Total connections: ${this.sessions.size}`,
+          message,
         );
       }
     });
