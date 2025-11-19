@@ -31,16 +31,18 @@ export const Ycalidraw = (props: {}) => {
 
   const handleMessage = (event: any) => {
     const data = event.data;
-    if (event.type === "pointer") {
-      handlePointerUpdate(data);
-    } else {
-      // handleElementChange
+    const api = excalidrawAPI.current;
+    if (api) {
+      if (event.type === "pointer") {
+        handlePointerUpdate(data, api);
+      } else {
+        handleElementChange(data, api);
+      }
     }
   };
 
-  const handlePointerUpdate = (data: any) => {
+  const handlePointerUpdate = (data: any, api: ExcalidrawImperativeAPI) => {
     // update the scene with the collaborator logic
-    const api = excalidrawAPI.current;
     if (api) {
       const allCollaborators = api?.getAppState().collaborators;
       const collaborator = new Map(allCollaborators);
@@ -60,12 +62,20 @@ export const Ycalidraw = (props: {}) => {
     }
   };
 
+  const handleElementChange = (data: any, api: ExcalidrawImperativeAPI) => {
+    if (api) {
+      api.updateScene({
+        elements: data,
+      });
+    }
+  };
+
   const sendEvent = useWebsocket(drawingId, handleMessage);
 
   return (
     <Excalidraw
       onPointerUpdate={(payload) => {
-        if (drawingId) {
+        if (drawingId && excalidrawAPI) {
           sendEvent({
             type: "pointer",
             data: {
@@ -73,6 +83,16 @@ export const Ycalidraw = (props: {}) => {
               x: payload.pointer.x,
               y: payload.pointer.y,
             },
+          });
+        }
+      }}
+      onPointerUp={() => {
+        if (drawingId && excalidrawAPI) {
+          const elements = excalidrawAPI.current?.getSceneElements();
+          console.log("All the elements", elements);
+          sendEvent({
+            type: "elementChange",
+            data: elements,
           });
         }
       }}
