@@ -1,8 +1,10 @@
 import { DurableObject } from "cloudflare:workers";
 
+
 export interface Env {
-  DURABLE_OBJECT: DurableObjectNamespace<YcalidrawWebSocketServer>;
+  DURABLE_OBJECT: DurableObjectNamespace;
 }
+
 
 // Durable Object
 export class YcalidrawWebSocketServer extends DurableObject {

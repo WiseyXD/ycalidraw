@@ -8,6 +8,7 @@
 	"main": "worker/index.ts",
 	"compatibility_date": "2025-11-17",
 	"assets": {
+		"directory": "./dist/client",
 		"not_found_handling": "single-page-application"
 	},
 	"observability": {
@@ -24,7 +25,7 @@
 	"migrations": [
 		{
 			"tag": "v1",
-			"new_classes": [
+			"new_sqlite_classes": [
 				"YcalidrawWebSocketServer"
 			]
 		}

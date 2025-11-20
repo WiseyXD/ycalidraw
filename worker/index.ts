@@ -1,4 +1,5 @@
-import { Hono, type Env } from "hono";
+import { Hono } from "hono";
+import type { Env } from "./durable-objects";
 export { YcalidrawWebSocketServer } from "./durable-objects";
 
 const app = new Hono<{ Bindings: Env }>();
@@ -33,15 +34,6 @@ app.get("/api/ws/:drawingId", async (c) => {
   let id = c.env.DURABLE_OBJECT.idFromName(drawingId);
   let stub = c.env.DURABLE_OBJECT.get(id);
   return stub.fetch(c.req.raw);
-});
-
-app.get("/api/get-elements/:drawingId", async (c) => {
-  const drawingId = c.req.param("drawingId");
-  const durableObjectId = c.env.DURABLE_OBJECT.idFromName(drawingId);
-  const stub = c.env.DURABLE_OBJECT.get(durableObjectId);
-  const elements = await stub.getAllElements();
-  console.log("sending all elements", elements);
-  return c.json(elements);
 });
 
 
