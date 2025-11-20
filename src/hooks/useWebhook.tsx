@@ -15,7 +15,9 @@ export default function useWebsocket(
 
     if (socket) {
       socket.onmessage = (event) => {
+        console.log("find initial element", event);
         const data = JSON.parse(event.data);
+        console.log(data)
         handleMessage(data);
       };
       socket.onopen = () => {

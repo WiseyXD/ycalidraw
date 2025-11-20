@@ -1,12 +1,25 @@
 import { DurableObject } from "cloudflare:workers";
 
+export interface Env {
+  DURABLE_OBJECT: DurableObjectNamespace<YcalidrawWebSocketServer>;
+}
+
 // Durable Object
 export class YcalidrawWebSocketServer extends DurableObject {
   sessions: Map<WebSocket, { [key: string]: string }>;
+  elements: any[] = [];
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.sessions = new Map();
+
+    // `blockConcurrencyWhile()` ensures no requests are delivered until
+    // initialization completes.
+    ctx.blockConcurrencyWhile(async () => {
+      // After initialization, future reads do not need to access storage.
+      this.elements = (await ctx.storage.get("elements")) || [];
+      console.log("elemtns saved ?", this.elements);
+    });
 
     // As part of constructing the Durable Object,
     // we wake up any hibernating WebSockets and
@@ -28,7 +41,11 @@ export class YcalidrawWebSocketServer extends DurableObject {
     );
   }
 
-  async fetch(request: Request): Promise<Response> {
+  async getAllElements() {
+    return { data: this.elements };
+  }
+
+  async fetch(): Promise<Response> {
     // Creates two ends of a WebSocket connection.
     const webSocketPair = new WebSocketPair();
     const [client, server] = Object.values(webSocketPair);
@@ -54,7 +71,13 @@ export class YcalidrawWebSocketServer extends DurableObject {
     // Add the WebSocket connection to the map of active sessions.
     this.sessions.set(server, { id });
 
-    console.log(client);
+    //  Send initial state to the newly connected client
+    server.send(
+      JSON.stringify({
+        type: "initialState",
+        data: this.elements, // latest saved elements
+      })
+    );
 
     return new Response(null, {
       status: 101,
@@ -62,9 +85,9 @@ export class YcalidrawWebSocketServer extends DurableObject {
     });
   }
 
-  async webSocketMessage(ws: WebSocket, message: ArrayBuffer | string) {
+  async webSocketMessage(ws: WebSocket, message: string) {
     // Get the session associated with the WebSocket connection.
-    const session = this.sessions.get(ws)!;
+    // const session = this.sessions.get(ws)!;
 
     // Upon receiving a message from the client, the server replies with the same message, the session ID of the connection,
     // and the total number of connections with the "[Durable Object]: " prefix
@@ -81,6 +104,7 @@ export class YcalidrawWebSocketServer extends DurableObject {
 
     // Send a message to all WebSocket connections except the connection (ws),
     // loop over all the connected WebSockets and filter out the connection (ws).
+
     this.sessions.forEach((attachment, connectedWs) => {
       if (connectedWs !== ws) {
         connectedWs.send(
@@ -89,6 +113,13 @@ export class YcalidrawWebSocketServer extends DurableObject {
         );
       }
     });
+    const event = JSON.parse(message);
+    const { type, data } = event;
+    if (type === "elementChange") {
+      console.log(data);
+      this.elements = data;
+      this.ctx.storage.put("elements", this.elements);
+    }
   }
 
   async webSocketClose(

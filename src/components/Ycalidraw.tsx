@@ -8,7 +8,7 @@ import type {
   SocketId,
 } from "@excalidraw/excalidraw/types";
 
-export const Ycalidraw = (props: {}) => {
+export const Ycalidraw = () => {
   const [userId, setUserId] = useState<null | string>(null);
   const excalidrawAPI = useRef<null | ExcalidrawImperativeAPI>(null);
   let { drawingId } = useParams();
@@ -17,17 +17,19 @@ export const Ycalidraw = (props: {}) => {
     return <>Please have a drawing ID</>;
   }
 
+
   useEffect(() => {
     let userId = localStorage.getItem("userId");
     if (!userId) {
-      localStorage.setItem(
-        "userId",
-        Math.random().toString(36).substring(2, 15),
-      );
+      localStorage.setItem("userId", Math.random().toString(36).substring(2, 15));
       userId = localStorage.getItem("userId");
     }
     setUserId(userId);
   }, []);
+
+
+
+
 
   const handleMessage = (event: any) => {
     const data = event.data;
@@ -35,7 +37,11 @@ export const Ycalidraw = (props: {}) => {
     if (api) {
       if (event.type === "pointer") {
         handlePointerUpdate(data, api);
-      } else {
+      }
+      else if (event.type === "initialState") {
+        handleElementChange(data, api)
+      }
+      else {
         handleElementChange(data, api);
       }
     }
