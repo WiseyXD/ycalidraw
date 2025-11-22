@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [react(), cloudflare(), tailwindcss()],
   resolve: {
     alias: {
+      //@ts-ignore
       "@": new URL("./src", import.meta.url).pathname
     },
   },

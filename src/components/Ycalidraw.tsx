@@ -7,27 +7,21 @@ import type {
   ExcalidrawImperativeAPI,
   SocketId,
 } from "@excalidraw/excalidraw/types";
-import { Button } from "./ui/button";
+import UsernameForm from "./UsernameForm";
 
 export const Ycalidraw = () => {
   const [userId, setUserId] = useState<null | string>(null);
   const excalidrawAPI = useRef<null | ExcalidrawImperativeAPI>(null);
   let { drawingId } = useParams();
 
-
+  if (!drawingId) {
+    return <>Have a drawing ID please</>
+  }
 
   useEffect(() => {
-    let userId = localStorage.getItem("userId");
-    if (!userId) {
-      localStorage.setItem("userId", Math.random().toString(36).substring(2, 15));
-      userId = localStorage.getItem("userId");
-    }
-    setUserId(userId);
+    let userIdFromLocal = localStorage.getItem("userId");
+    setUserId(userIdFromLocal);
   }, []);
-
-
-
-
 
   const handleMessage = (event: any) => {
     const data = event.data;
@@ -78,6 +72,18 @@ export const Ycalidraw = () => {
 
   return (
     <>
+      {
+        !userId && (
+          <UsernameForm
+            open={!userId}
+            onSubmit={(name) => {
+              localStorage.setItem("userId", name);
+              setUserId(name);
+            }}
+          />
+        )
+      }
+
       <Excalidraw
         onPointerUpdate={(payload) => {
           if (drawingId && excalidrawAPI) {
@@ -109,9 +115,6 @@ export const Ycalidraw = () => {
           }
         }}
       />
-      <Button>
-        Aryan
-      </Button>
     </>
   );
 };
