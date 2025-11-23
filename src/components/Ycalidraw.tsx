@@ -84,6 +84,8 @@ export const Ycalidraw = () => {
         )
       }
 
+      <>Null</>
+
       <Excalidraw
         onPointerUpdate={(payload) => {
           if (drawingId && excalidrawAPI) {
