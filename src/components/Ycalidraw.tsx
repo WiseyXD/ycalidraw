@@ -9,12 +9,12 @@ import type {
 } from "@excalidraw/excalidraw/types";
 import UsernameForm from "./UsernameForm";
 
-export const Ycalidraw = () => {
+export const Ycalidraw = (isSingleMode: boolean) => {
   const [userId, setUserId] = useState<null | string>(null);
   const excalidrawAPI = useRef<null | ExcalidrawImperativeAPI>(null);
   let { drawingId } = useParams();
 
-  if (!drawingId) {
+  if (isSingleMode && !drawingId) {
     return <>Have a drawing ID please</>
   }
 
