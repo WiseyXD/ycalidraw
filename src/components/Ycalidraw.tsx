@@ -1,4 +1,4 @@
-import { Excalidraw } from "@excalidraw/excalidraw";
+import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
 import { useParams } from "react-router";
 import useWebsocket from "../hooks/useWebhook";
@@ -9,12 +9,13 @@ import type {
 } from "@excalidraw/excalidraw/types";
 import UsernameForm from "./UsernameForm";
 
-export const Ycalidraw = (isSingleMode: boolean) => {
+export const Ycalidraw = () => {
   const [userId, setUserId] = useState<null | string>(null);
   const excalidrawAPI = useRef<null | ExcalidrawImperativeAPI>(null);
   let { drawingId } = useParams();
+  console.log(drawingId)
 
-  if (isSingleMode && !drawingId) {
+  if (!drawingId) {
     return <>Have a drawing ID please</>
   }
 
@@ -68,7 +69,7 @@ export const Ycalidraw = (isSingleMode: boolean) => {
     }
   };
 
-  const sendEvent = useWebsocket(drawingId, handleMessage);
+  const sendEvent = useWebsocket(drawingId!, handleMessage);
 
   return (
     <>
@@ -84,7 +85,6 @@ export const Ycalidraw = (isSingleMode: boolean) => {
         )
       }
 
-      <>Null</>
 
       <Excalidraw
         onPointerUpdate={(payload) => {
@@ -116,7 +116,25 @@ export const Ycalidraw = (isSingleMode: boolean) => {
             console.log("Api not being set");
           }
         }}
-      />
+      >
+        <MainMenu>
+          <MainMenu.Group title="Your drawings">
+            <MainMenu.Item onSelect={() => window.alert("Item1")}>
+              3
+            </MainMenu.Item>
+            <MainMenu.Item onSelect={() => window.alert("Item2")}>
+              1
+            </MainMenu.Item>
+          </MainMenu.Group>
+
+          <MainMenu.DefaultItems.Export />
+          <MainMenu.DefaultItems.SearchMenu />
+
+          <MainMenu.DefaultItems.ChangeCanvasBackground />
+          <MainMenu.DefaultItems.ToggleTheme />
+        </MainMenu>
+
+      </Excalidraw>
     </>
   );
 };
