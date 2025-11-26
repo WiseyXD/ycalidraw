@@ -1,140 +1,166 @@
 import { Excalidraw, MainMenu } from "@excalidraw/excalidraw";
 import "@excalidraw/excalidraw/index.css";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import useWebsocket from "../hooks/useWebhook";
 import { useEffect, useRef, useState } from "react";
-import type {
-  ExcalidrawImperativeAPI,
-  SocketId,
-} from "@excalidraw/excalidraw/types";
+import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 import UsernameForm from "./UsernameForm";
 
-export const Ycalidraw = () => {
-  const [userId, setUserId] = useState<null | string>(null);
-  const excalidrawAPI = useRef<null | ExcalidrawImperativeAPI>(null);
-  let { drawingId } = useParams();
-  console.log(drawingId)
+import {
+  getAllDrawings,
+  createDrawing,
+  deleteDrawing,
+  updateDrawingTimestamp,
+} from "../lib/drawingManager";
 
-  if (!drawingId) {
-    return <>Have a drawing ID please</>
-  }
+export const Ycalidraw = () => {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [drawings, setDrawings] = useState<any[]>([]);
+  const excalidrawAPI = useRef<ExcalidrawImperativeAPI | null>(null);
+
+  let { drawingId } = useParams();
+  const navigate = useNavigate();
+
+  // Auto–redirect if no drawingId is present
+  useEffect(() => {
+    if (!drawingId) {
+      const stored = getAllDrawings();
+
+      if (stored.length === 0) {
+        // No drawings exist → force user to create one
+        const name = prompt("Create your first drawing:", "Untitled");
+        const meta = createDrawing(name || "Untitled");
+        navigate(`/${meta.id}`);
+        return;
+      }
+
+      // Drawings exist → open the first one
+      navigate(`/${stored[0].id}`);
+    }
+  }, [drawingId]);
+
 
   useEffect(() => {
-    let userIdFromLocal = localStorage.getItem("userId");
-    setUserId(userIdFromLocal);
+    setDrawings(getAllDrawings());
   }, []);
 
-  const handleMessage = (event: any) => {
-    const data = event.data;
-    const api = excalidrawAPI.current;
-    if (api) {
-      if (event.type === "pointer") {
-        handlePointerUpdate(data, api);
-      }
-      else if (event.type === "initialState") {
-        handleElementChange(data, api)
-      }
-      else {
-        handleElementChange(data, api);
-      }
-    }
-  };
+  useEffect(() => {
+    setUserId(localStorage.getItem("userId"));
+  }, []);
 
-  const handlePointerUpdate = (data: any, api: ExcalidrawImperativeAPI) => {
-    // update the scene with the collaborator logic
-    if (api) {
-      const allCollaborators = api?.getAppState().collaborators;
-      const collaborator = new Map(allCollaborators);
-      collaborator.set(data.userId as SocketId, {
-        username: data.userId,
+
+  if (!drawingId) return <>Have a drawing ID please</>;
+
+  const sendEvent = useWebsocket(drawingId, handleMessage);
+
+  function handleMessage(event: any) {
+    const api = excalidrawAPI.current;
+    if (!api) return;
+
+    if (event.type === "pointer") {
+      const collab = new Map(api.getAppState().collaborators);
+      collab.set(event.data.userId, {
+        username: event.data.userId,
         pointer: {
-          y: data.y,
-          x: data.x,
+          x: event.data.x,
+          y: event.data.y,
           tool: "laser",
         },
       });
-      api?.updateScene({
-        collaborators: collaborator,
-      });
-    } else {
-      console.log("Update scene not working");
+      api.updateScene({ collaborators: collab });
+      return;
     }
+
+    api.updateScene({ elements: event.data });
+  }
+
+  const handleNewDrawing = () => {
+    const name = prompt("Name your drawing:", "Untitled");
+    const meta = createDrawing(name || "Untitled");
+    navigate(`/${meta.id}`);
   };
 
-  const handleElementChange = (data: any, api: ExcalidrawImperativeAPI) => {
-    if (api) {
-      api.updateScene({
-        elements: data,
-      });
-    }
+  const handleOpenDrawing = (id: string) => {
+    navigate(`/${id}`);
   };
 
-  const sendEvent = useWebsocket(drawingId!, handleMessage);
+  const handleDeleteDrawing = (id: string) => {
+    if (!confirm("Delete this drawing?")) return;
+    deleteDrawing(id);
+    setDrawings(getAllDrawings());
+  };
+
+  const handleSave = () => {
+    updateDrawingTimestamp(drawingId);
+    setDrawings(getAllDrawings());
+  };
+
+
 
   return (
     <>
-      {
-        !userId && (
-          <UsernameForm
-            open={!userId}
-            onSubmit={(name) => {
-              localStorage.setItem("userId", name);
-              setUserId(name);
-            }}
-          />
-        )
-      }
-
+      {!userId && (
+        <UsernameForm
+          open={!userId}
+          onSubmit={(name) => {
+            localStorage.setItem("userId", name);
+            setUserId(name);
+          }}
+        />
+      )}
 
       <Excalidraw
+        excalidrawAPI={(api) => (excalidrawAPI.current = api)}
         onPointerUpdate={(payload) => {
-          if (drawingId && excalidrawAPI) {
-            sendEvent({
-              type: "pointer",
-              data: {
-                userId,
-                x: payload.pointer.x,
-                y: payload.pointer.y,
-              },
-            });
-          }
+          sendEvent({
+            type: "pointer",
+            data: {
+              userId,
+              x: payload.pointer.x,
+              y: payload.pointer.y,
+            },
+          });
         }}
         onPointerUp={() => {
-          if (drawingId && excalidrawAPI) {
-            const elements = excalidrawAPI.current?.getSceneElements();
-            console.log("All the elements", elements);
-            sendEvent({
-              type: "elementChange",
-              data: elements,
-            });
-          }
-        }}
-        excalidrawAPI={(api) => {
-          if (api) {
-            excalidrawAPI.current = api;
-          } else {
-            console.log("Api not being set");
-          }
+          const elements = excalidrawAPI.current?.getSceneElements();
+          sendEvent({
+            type: "elementChange",
+            data: elements,
+          });
+          handleSave();
         }}
       >
         <MainMenu>
-          <MainMenu.Group title="Your drawings">
-            <MainMenu.Item onSelect={() => window.alert("Item1")}>
-              3
+          <MainMenu.Group title="Drawings">
+            <MainMenu.Item onSelect={handleNewDrawing}>
+              ➕ New Drawing
             </MainMenu.Item>
-            <MainMenu.Item onSelect={() => window.alert("Item2")}>
-              1
-            </MainMenu.Item>
+
+            {drawings.map((d) => (
+              <MainMenu.Item key={d.id} onSelect={() => handleOpenDrawing(d.id)}>
+                {d.name} — {new Date(d.updatedAt).toLocaleString()}
+              </MainMenu.Item>
+            ))}
+
+            <MainMenu.Separator />
+
+            {drawings.map((d) => (
+              <MainMenu.Item
+                key={d.id + "-delete"}
+                onSelect={() => handleDeleteDrawing(d.id)}
+              >
+                ❌ Delete {d.name}
+              </MainMenu.Item>
+            ))}
           </MainMenu.Group>
 
           <MainMenu.DefaultItems.Export />
           <MainMenu.DefaultItems.SearchMenu />
-
           <MainMenu.DefaultItems.ChangeCanvasBackground />
           <MainMenu.DefaultItems.ToggleTheme />
         </MainMenu>
-
       </Excalidraw>
     </>
   );
 };
+

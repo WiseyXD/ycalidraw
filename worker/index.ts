@@ -36,6 +36,14 @@ app.get("/api/ws/:drawingId", async (c) => {
   return stub.fetch(c.req.raw);
 });
 
+app.delete("/api/delete/:drawingId", async (c) => {
+  const drawingId = c.req.param("drawingId");
+  const id = c.env.DURABLE_OBJECT.idFromName(drawingId);
+  const stub = c.env.DURABLE_OBJECT.get(id);
+  const res = await stub.fetch("https://dummy/delete", { method: "DELETE" });
+  return c.json(await res.json());
+});
+
 
 export default {
   fetch: app.fetch,

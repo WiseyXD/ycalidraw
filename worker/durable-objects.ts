@@ -47,7 +47,23 @@ export class YcalidrawWebSocketServer extends DurableObject {
     return { data: this.elements };
   }
 
-  async fetch(): Promise<Response> {
+  async clearDo() {
+    await this.ctx.storage.deleteAll();
+    await this.ctx.storage.deleteAlarm();
+    this.elements = [];
+    return { cleared: true };
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    // DELETE /api/delete inside the DO
+    if (request.method === "DELETE") {
+      const result = await this.clearDo();
+      return new Response(JSON.stringify(result), {
+        status: 200,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     // Creates two ends of a WebSocket connection.
     const webSocketPair = new WebSocketPair();
     const [client, server] = Object.values(webSocketPair);
