@@ -8,8 +8,8 @@ export default function useWebsocket(
 
   useEffect(() => {
     socketRef.current = new WebSocket(
-      // "wss:/ycalidraw.aryan-s-nag.workers.dev/api/ws/" + drawingId,
-      "http://localhost:5173/api/ws" + drawingId,
+      "wss:/ycalidraw.aryan-s-nag.workers.dev/api/ws/" + drawingId,
+      // "http://localhost:5173/api/ws" + drawingId,
 
     );
     const socket = socketRef.current;

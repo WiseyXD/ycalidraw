@@ -47,8 +47,8 @@ export function updateDrawingTimestamp(id: string) {
 export async function deleteDrawing(id: string) {
   const list = getAllDrawings().filter((d) => d.id !== id);
   // make the api call to delete the durable object
-  // const resp = await fetch("https:/ycalidraw.aryan-s-nag.workers.dev/api/delete/" + id, {
-  const resp = await fetch("http://localhost:5173/api/delete/" + id, {
+  const resp = await fetch("https:/ycalidraw.aryan-s-nag.workers.dev/api/delete/" + id, {
+    // const resp = await fetch("http://localhost:5173/api/delete/" + id, {
     method: "DELETE"
   })
   console.log(resp)
