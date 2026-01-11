@@ -59,7 +59,7 @@ export default function UsernameForm({
                 <FormItem>
                   <FormLabel>Username</FormLabel>
                   <FormControl>
-                    <Input placeholder="eg. aryan123" {...field} />
+                    <Input placeholder="eg. WiseyXD" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
