@@ -145,7 +145,7 @@ export const Ycalidraw = () => {
               ➕ New Drawing
             </MainMenu.Item>
             <MainMenu.Item onSelect={handleInviteToDrawing}>
-              ➕ Invite to Drawing
+              👋 Invite link
             </MainMenu.Item>
 
 
@@ -153,11 +153,10 @@ export const Ycalidraw = () => {
               <MainMenu.Item
                 key={d.id}
                 onSelect={() => handleOpenDrawing(d.id)}
-                // Native tooltip for details
                 title={`Last updated: ${new Date(d.updatedAt).toLocaleString()}`}
+                style={{ backgroundColor: d.id === drawingId ? "#f0f0f0" : "" }}
               >
-                <div className="flex items-center gap-1">
-                  {/* Delete Button */}
+                <div className={"flex items-center gap-1"}>
                   <button
                     type="button"
                     onClick={(e) => {
@@ -170,7 +169,6 @@ export const Ycalidraw = () => {
                     ❌
                   </button>
 
-                  {/* Name - truncated if too long */}
                   <span className="truncate flex-1">
                     {d.name}
                   </span>
