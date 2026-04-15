@@ -21,6 +21,8 @@ export const Ycalidraw = () => {
   let { drawingId } = useParams();
   const navigate = useNavigate();
 
+  const sendEvent = useWebsocket(drawingId, handleMessage);
+
   // Auto–redirect if no drawingId is present
   useEffect(() => {
     if (!drawingId) {
@@ -48,10 +50,6 @@ export const Ycalidraw = () => {
     setUserId(localStorage.getItem("userId"));
   }, []);
 
-
-  if (!drawingId) return <>Have a drawing ID please</>;
-
-  const sendEvent = useWebsocket(drawingId, handleMessage);
 
   function handleMessage(event: any) {
     const api = excalidrawAPI.current;

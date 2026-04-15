@@ -1,12 +1,14 @@
 import { useEffect, useRef } from "react";
 
 export default function useWebsocket(
-  drawingId: string,
+  drawingId: string | undefined,
   handleMessage: (event: any) => void,
 ) {
   const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
+    if (!drawingId) return;
+
     socketRef.current = new WebSocket(
       "wss:/ycalidraw.aryan-s-nag.workers.dev/api/ws/" + drawingId,
       // "http://localhost:5173/api/ws" + drawingId,
