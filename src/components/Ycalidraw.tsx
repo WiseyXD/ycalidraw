@@ -77,6 +77,7 @@ export const Ycalidraw = () => {
   const handleNewDrawing = () => {
     const name = prompt("Name your drawing:", "Untitled");
     const meta = createDrawing(name || "Untitled");
+    setDrawings(getAllDrawings());
     navigate(`/${meta.id}`);
   };
 
