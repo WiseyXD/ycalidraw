@@ -12,6 +12,7 @@ import {
   deleteDrawing,
   updateDrawingTimestamp,
 } from "../lib/drawingManager";
+import { toast } from "sonner";
 
 export const Ycalidraw = () => {
   const [userId, setUserId] = useState<string | null>(null);
@@ -79,6 +80,8 @@ export const Ycalidraw = () => {
     const meta = createDrawing(name || "Untitled");
     setDrawings(getAllDrawings());
     navigate(`/${meta.id}`);
+    toast.success("Created new drawing named : " + name + " 🎨", { position: "top-center" });
+
   };
 
   const handleOpenDrawing = (id: string) => {
@@ -94,6 +97,11 @@ export const Ycalidraw = () => {
   const handleSave = () => {
     updateDrawingTimestamp(drawingId);
     setDrawings(getAllDrawings());
+  };
+
+  const handleInviteToDrawing = async () => {
+    await navigator.clipboard.writeText("http://localhost:5173/api/ws" + drawingId);
+    toast.success("Copied invite link to clipboard", { position: "top-center" });
   };
 
 
@@ -136,6 +144,10 @@ export const Ycalidraw = () => {
             <MainMenu.Item onSelect={handleNewDrawing}>
               ➕ New Drawing
             </MainMenu.Item>
+            <MainMenu.Item onSelect={handleInviteToDrawing}>
+              ➕ Invite to Drawing
+            </MainMenu.Item>
+
 
             {drawings.map((d) => (
               <MainMenu.Item
