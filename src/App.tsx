@@ -2,7 +2,7 @@ import "./App.css";
 import { Ycalidraw } from "./components/Ycalidraw";
 function App() {
   return (
-    <div className="canvas h-[800px] w-full">
+    <div className="canvas h-screen w-full">
       <Ycalidraw />
     </div>
   );
