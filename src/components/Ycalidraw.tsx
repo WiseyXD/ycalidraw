@@ -50,6 +50,8 @@ export const Ycalidraw = () => {
     setUserId(localStorage.getItem("userId"));
   }, []);
 
+  if (!drawingId) return null;
+
 
   function handleMessage(event: any) {
     const api = excalidrawAPI.current;
