@@ -15,13 +15,10 @@ export default function useWebsocket(
 
     );
     const socket = socketRef.current;
-    console.log("useWebsocket", socket);
 
     if (socket) {
       socket.onmessage = (event) => {
-        console.log("find initial element", event);
         const data = JSON.parse(event.data);
-        console.log(data)
         handleMessage(data);
       };
       socket.onopen = () => {
@@ -34,7 +31,7 @@ export default function useWebsocket(
         socket.close();
       }
     };
-  }, []);
+  }, [drawingId]);
 
   const sendEvent = (event: any) => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
