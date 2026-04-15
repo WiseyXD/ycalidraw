@@ -137,21 +137,35 @@ export const Ycalidraw = () => {
             </MainMenu.Item>
 
             {drawings.map((d) => (
-              <MainMenu.Item key={d.id} onSelect={() => handleOpenDrawing(d.id)}>
-                {d.name} — {new Date(d.updatedAt).toLocaleString()}
-              </MainMenu.Item>
-            ))}
-
-            <MainMenu.Separator />
-
-            {drawings.map((d) => (
               <MainMenu.Item
-                key={d.id + "-delete"}
-                onSelect={() => handleDeleteDrawing(d.id)}
+                key={d.id}
+                onSelect={() => handleOpenDrawing(d.id)}
+                // Native tooltip for details
+                title={`Last updated: ${new Date(d.updatedAt).toLocaleString()}`}
               >
-                ❌ Delete {d.name}
+                <div className="flex items-center gap-1">
+                  {/* Delete Button */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteDrawing(d.id);
+                    }}
+                    className="p-1 hover:bg-red-100 rounded transition-colors text-xs"
+                    title="Delete drawing"
+                  >
+                    ❌
+                  </button>
+
+                  {/* Name - truncated if too long */}
+                  <span className="truncate flex-1">
+                    {d.name}
+                  </span>
+
+                </div>
               </MainMenu.Item>
             ))}
+
           </MainMenu.Group>
 
           <MainMenu.DefaultItems.Export />
