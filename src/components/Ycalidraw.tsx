@@ -147,8 +147,6 @@ export const Ycalidraw = () => {
             <MainMenu.Item onSelect={handleInviteToDrawing}>
               👋 Invite link
             </MainMenu.Item>
-
-
             {drawings.map((d) => (
               <MainMenu.Item
                 key={d.id}
@@ -156,27 +154,34 @@ export const Ycalidraw = () => {
                 title={`Last updated: ${new Date(d.updatedAt).toLocaleString()}`}
                 style={{ backgroundColor: d.id === drawingId ? "#f0f0f0" : "" }}
               >
-                <div className={"flex items-center gap-1"}>
-                  <button
-                    type="button"
+                <div className="flex items-center gap-2 w-full">
+                  {/* Changed <button> to <span> to avoid nesting error */}
+                  <span
+                    role="button"
+                    tabIndex={0}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleDeleteDrawing(d.id);
                     }}
-                    className="p-1 hover:bg-red-100 rounded transition-colors text-xs"
+                    // Handlers to make it feel like a button for accessibility
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation();
+                        handleDeleteDrawing(d.id);
+                      }
+                    }}
+                    className="p-1 hover:bg-red-200 rounded transition-colors text-xs cursor-pointer select-none"
                     title="Delete drawing"
                   >
                     ❌
-                  </button>
+                  </span>
 
                   <span className="truncate flex-1">
                     {d.name}
                   </span>
-
                 </div>
               </MainMenu.Item>
             ))}
-
           </MainMenu.Group>
 
           <MainMenu.DefaultItems.Export />
