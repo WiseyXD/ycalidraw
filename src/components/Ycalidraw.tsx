@@ -107,7 +107,8 @@ export const Ycalidraw = () => {
 
 
   return (
-    <>
+    <div className="canvas h-screen w-full">
+
       {!userId && (
         <UsernameForm
           open={!userId}
@@ -190,7 +191,8 @@ export const Ycalidraw = () => {
           <MainMenu.DefaultItems.ToggleTheme />
         </MainMenu>
       </Excalidraw>
-    </>
+    </div>
+
   );
 };
 
