@@ -25,22 +25,22 @@ export const Ycalidraw = () => {
   const sendEvent = useWebsocket(drawingId, handleMessage);
 
   // Auto–redirect if no drawingId is present
-  useEffect(() => {
-    if (!drawingId) {
-      const stored = getAllDrawings();
+  // useEffect(() => {
+  //   if (!drawingId) {
+  //     const stored = getAllDrawings();
 
-      if (stored.length === 0) {
-        // No drawings exist → force user to create one
-        const name = prompt("Create your first drawing:", "Untitled");
-        const meta = createDrawing(name || "Untitled");
-        navigate(`/${meta.id}`);
-        return;
-      }
+  //     if (stored.length === 0) {
+  //       // No drawings exist → force user to create one
+  //       const name = prompt("Create your first drawing:", "Untitled");
+  //       const meta = createDrawing(name || "Untitled");
+  //       navigate(`/${meta.id}`);
+  //       return;
+  //     }
 
-      // Drawings exist → open the first one
-      navigate(`/${stored[0].id}`);
-    }
-  }, [drawingId]);
+  //     // Drawings exist → open the first one
+  //     navigate(`/${stored[0].id}`);
+  //   }
+  // }, [drawingId]);
 
 
   useEffect(() => {

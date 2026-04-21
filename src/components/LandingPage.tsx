@@ -1,5 +1,7 @@
+import { createDrawing, getAllDrawings } from '@/lib/drawingManager';
 import { motion } from 'framer-motion';
 import { Pencil, Users, Zap, Globe, ArrowRight, GitForkIcon } from 'lucide-react';
+import { useNavigate } from 'react-router';
 
 // --- SHADCN UI PLACEHOLDERS ---
 // If you have Shadcn installed, delete these and import your actual components:
@@ -25,9 +27,27 @@ const Card = ({ children, className = '' }) => (
     {children}
   </div>
 );
+
 // ------------------------------
 
 export default function LandingPage() {
+  const navigate = useNavigate();
+
+  const handleDrawingRedirect = () => {
+    const stored = getAllDrawings();
+    if (stored.length === 0) {
+      // No drawings exist → force user to create one
+      const name = prompt("Create your first drawing:", "Untitled");
+      const meta = createDrawing(name || "Untitled");
+      navigate(`/${meta.id}`);
+      return;
+    }
+    // Drawings exist → open the first one
+    navigate(`/${stored[0].id}`);
+
+
+  };
+
   // Framer motion variants for staggered animations
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -84,7 +104,7 @@ export default function LandingPage() {
           </motion.p>
 
           <motion.div variants={itemVariants} className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
-            <Button className="h-12 px-8 text-base">
+            <Button onClick={handleDrawingRedirect}>
               Start Drawing Now
               <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
