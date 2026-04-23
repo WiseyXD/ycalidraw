@@ -1,34 +1,8 @@
 import { createDrawing, getAllDrawings } from '@/lib/drawingManager';
 import { motion } from 'framer-motion';
-import { Pencil, Users, Zap, Globe, ArrowRight, GitForkIcon } from 'lucide-react';
+import { Pencil, ArrowRight, GitForkIcon } from 'lucide-react';
 import { useNavigate } from 'react-router';
-
-// --- SHADCN UI PLACEHOLDERS ---
-// If you have Shadcn installed, delete these and import your actual components:
-// import { Button } from "@/components/ui/button"
-// import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-
-const Button = ({ children, className = '', variant = 'default', ...props }) => {
-  const baseStyles = "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-9 px-4 py-2";
-  const variants = {
-    default: "bg-slate-900 text-slate-50 shadow hover:bg-slate-900/90",
-    outline: "border border-slate-200 bg-transparent shadow-sm hover:bg-slate-100 hover:text-slate-900",
-    ghost: "hover:bg-slate-100 hover:text-slate-900"
-  };
-  return (
-    <button className={`${baseStyles} ${variants[variant]} ${className}`} {...props}>
-      {children}
-    </button>
-  );
-};
-
-const Card = ({ children, className = '' }) => (
-  <div className={`rounded-xl border border-slate-200 bg-white text-slate-950 shadow ${className}`}>
-    {children}
-  </div>
-);
-
-// ------------------------------
+import { Button } from './ui/button';
 
 export default function LandingPage() {
   const navigate = useNavigate();
