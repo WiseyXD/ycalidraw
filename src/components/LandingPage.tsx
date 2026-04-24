@@ -1,7 +1,7 @@
 import { createDrawing, getAllDrawings } from '@/lib/drawingManager';
 import { motion } from 'framer-motion';
 import { Pencil, ArrowRight, GitForkIcon } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Button } from './ui/button';
 
 export default function LandingPage() {
@@ -48,10 +48,12 @@ export default function LandingPage() {
           <span>Ycalidraw</span>
         </div>
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" className="hidden sm:inline-flex">
-            <GitForkIcon className="w-4 h-4 mr-2" />
-            Star on GitHub
-          </Button>
+          <Link to="https://github.com/wiseyxd/ycalidraw" target="_blank">
+            <Button variant="ghost" className="hidden sm:inline-flex">
+              <GitForkIcon className="w-4 h-4 mr-2" />
+              Star on GitHub
+            </Button>
+          </Link>
         </div>
       </nav>
 
@@ -107,7 +109,7 @@ export default function LandingPage() {
             </div>
             {/* Mockup Body */}
             <div className="flex-1 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] bg-slate-50/50 relative flex items-center justify-center">
-              <div className="text-slate-400 font-medium">Your Excalidraw Canvas goes here</div>
+              <div className="text-slate-400 font-medium">Your Drawing Canvas </div>
 
               {/* Fake Multiplayer Cursors */}
               <motion.div
@@ -118,7 +120,7 @@ export default function LandingPage() {
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-blue-500 drop-shadow-md">
                   <path d="M5.65376 21.3113L3.89648 3.01026C3.7663 1.65431 5.25055 0.722659 6.42533 1.42449L21.3655 10.3475C22.4939 11.0215 22.2536 12.7212 20.9575 13.0441L14.7745 14.5843C14.4079 14.6757 14.1102 14.9395 13.9669 15.299L11.3742 21.8021C10.8876 23.0223 9.1172 22.9734 8.70519 21.724L5.65376 21.3113Z" fill="currentColor" />
                 </svg>
-                <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-medium ml-4">Alice</span>
+                <span className="bg-blue-500 text-white text-[10px] px-2 py-0.5 rounded-full font-medium ml-4">Aryan</span>
               </motion.div>
             </div>
           </div>
@@ -130,9 +132,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
           <p>© {new Date().getFullYear()} Ycalidraw. Built by an Aryan Sanjay Nagbanshi.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-slate-900 transition-colors">Twitter</a>
-            <a href="#" className="hover:text-slate-900 transition-colors">GitHub</a>
-            <a href="#" className="hover:text-slate-900 transition-colors">Terms</a>
+            <a href="https://x.com/AryanNagbanshi" className="hover:text-slate-900 transition-colors">Twitter</a>
+            <a href="https://github.com/wiseyxd" className="hover:text-slate-900 transition-colors">GitHub</a>
           </div>
         </div>
       </footer>
