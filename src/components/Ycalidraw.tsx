@@ -100,7 +100,8 @@ export const Ycalidraw = () => {
   };
 
   const handleInviteToDrawing = async () => {
-    await navigator.clipboard.writeText("http://localhost:5173/api/ws" + drawingId);
+    // await navigator.clipboard.writeText("http://localhost:5173/api/ws" + drawingId);
+    await navigator.clipboard.writeText("https:/ycalidraw.aryan-s-nag.workers.dev/api/ws" + drawingId);
     toast.success("Copied invite link to clipboard", { position: "top-center" });
   };
 
