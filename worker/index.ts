@@ -44,6 +44,10 @@ app.delete("/api/delete/:drawingId", async (c) => {
   return c.json(await res.json());
 });
 
+app.get('/aikido.txt', (c) => {
+  return c.text('validation.aikido.0652de41b0a625591452d21eb8a1f011')
+})
+
 
 export default {
   fetch: app.fetch,
