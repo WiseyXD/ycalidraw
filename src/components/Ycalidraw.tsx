@@ -10,6 +10,7 @@ import StatusPill from "./StatusPill";
 
 import {
   getAllDrawings,
+  type DrawingMeta,
   saveAllDrawings,
   deleteDrawing,
   updateDrawingTimestamp,
@@ -23,6 +24,81 @@ type PeerInfo = { username: string; color: string };
 
 function toExcalidrawColor(hex: string) {
   return { background: hex, stroke: hex };
+}
+
+function DrawingItem({
+  d,
+  isActive,
+  onOpen,
+  onDelete,
+  onRename,
+}: {
+  d: DrawingMeta;
+  isActive: boolean;
+  onOpen: () => void;
+  onDelete: () => void;
+  onRename: (name: string) => void;
+}) {
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState(d.name);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (renaming) inputRef.current?.focus();
+  }, [renaming]);
+
+  const commit = () => {
+    const trimmed = draft.trim();
+    setRenaming(false);
+    if (trimmed && trimmed !== d.name) onRename(trimmed);
+    else setDraft(d.name);
+  };
+
+  if (renaming) {
+    return (
+      <input
+        ref={inputRef}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commit}
+        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === "Enter") commit();
+          if (e.key === "Escape") { setDraft(d.name); setRenaming(false); }
+        }}
+        className="w-full px-2 py-0.5 text-sm border border-slate-400 rounded outline-none bg-white"
+      />
+    );
+  }
+
+  return (
+    <div className="flex items-center w-full gap-2 min-w-0">
+      <span className="shrink-0">📄</span>
+      <span className="truncate flex-1">{d.name || "Untitled"}</span>
+      <span
+        role="button"
+        tabIndex={0}
+        title="Rename"
+        onClick={(e) => { e.stopPropagation(); setDraft(d.name); setRenaming(true); }}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setDraft(d.name); setRenaming(true); } }}
+        className="p-1 hover:bg-slate-200 rounded transition-colors text-xs cursor-pointer shrink-0 select-none"
+      >
+        ✏️
+      </span>
+      <span
+        role="button"
+        tabIndex={0}
+        title="Delete"
+        onClick={(e) => { e.stopPropagation(); onDelete(); }}
+        onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); onDelete(); } }}
+        className="p-1 hover:bg-red-200 rounded transition-colors text-xs cursor-pointer shrink-0 select-none"
+      >
+        🗑️
+      </span>
+    </div>
+  );
 }
 
 export const Ycalidraw = () => {
@@ -199,19 +275,15 @@ export const Ycalidraw = () => {
     toast.success("Copied invite link to clipboard", { position: "top-center" });
   };
 
-  const handleRename = (newName: string) => {
-    const now = Date.now();
-    setRoomName(newName);
-    if (drawingId) {
-      upsertDrawing({
-        id: drawingId,
-        name: newName,
-        createdAt: roomCreatedAtRef.current || now,
-        updatedAt: now,
-      });
-      setDrawings(getAllDrawings());
+  const handleRenameDrawing = (id: string, newName: string) => {
+    const existing = getAllDrawings().find((d) => d.id === id);
+    if (!existing) return;
+    upsertDrawing({ ...existing, name: newName, updatedAt: Date.now() });
+    setDrawings(getAllDrawings());
+    if (id === drawingId) {
+      setRoomName(newName);
+      sendEvent({ type: "rename", data: { name: newName } });
     }
-    sendEvent({ type: "rename", data: { name: newName } });
   };
 
   return (
@@ -226,7 +298,7 @@ export const Ycalidraw = () => {
         />
       )}
 
-      <RoomTitle name={roomName} onRename={handleRename} />
+      <RoomTitle name={roomName} />
       <StatusPill status={status} />
 
       <Excalidraw
@@ -263,30 +335,15 @@ export const Ycalidraw = () => {
                 key={d.id}
                 onSelect={() => handleOpenDrawing(d.id)}
                 title={`Last updated: ${new Date(d.updatedAt).toLocaleString()}`}
-                style={{ backgroundColor: d.id === drawingId ? "#f0f0f0" : "" }}
+                style={{ backgroundColor: d.id === drawingId ? "#e8e8e8" : "" }}
               >
-                <div className="flex items-center gap-2 w-full">
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteDrawing(d.id);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        e.stopPropagation();
-                        handleDeleteDrawing(d.id);
-                      }
-                    }}
-                    className="p-1 hover:bg-red-200 rounded transition-colors text-xs cursor-pointer select-none"
-                    title="Delete drawing"
-                  >
-                    ❌
-                  </span>
-
-                  <span className="truncate flex-1">{d.name}</span>
-                </div>
+                <DrawingItem
+                  d={d}
+                  isActive={d.id === drawingId}
+                  onOpen={() => handleOpenDrawing(d.id)}
+                  onDelete={() => handleDeleteDrawing(d.id)}
+                  onRename={(name) => handleRenameDrawing(d.id, name)}
+                />
               </MainMenu.Item>
             ))}
           </MainMenu.Group>
