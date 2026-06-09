@@ -1,4 +1,4 @@
-import { createDrawing, getAllDrawings } from '@/lib/drawingManager';
+import { getAllDrawings } from '@/lib/drawingManager';
 import { motion } from 'framer-motion';
 import { Pencil, ArrowRight, GitForkIcon } from 'lucide-react';
 import { Link, useNavigate } from 'react-router';
@@ -10,16 +10,11 @@ export default function LandingPage() {
   const handleDrawingRedirect = () => {
     const stored = getAllDrawings();
     if (stored.length === 0) {
-      // No drawings exist → force user to create one
-      const name = prompt("Create your first drawing:", "Untitled");
-      const meta = createDrawing(name || "Untitled");
-      navigate(`/${meta.id}`);
+      const id = crypto.randomUUID();
+      navigate(`/${id}`);
       return;
     }
-    // Drawings exist → open the first one
     navigate(`/${stored[0].id}`);
-
-
   };
 
   // Framer motion variants for staggered animations
@@ -103,8 +98,8 @@ export default function LandingPage() {
                 <div className="w-3 h-3 rounded-full bg-amber-400" />
                 <div className="w-3 h-3 rounded-full bg-green-400" />
               </div>
-              <div className="mx-auto w-1/3 h-6 bg-white border border-slate-200 rounded-md text-[10px] text-slate-400 flex items-center justify-center font-mono">
-                ycalidraw.app/room/a1b2c3d4
+              <div className="mx-auto w-2/3 sm:w-1/3 h-6 bg-white border border-slate-200 rounded-md text-[10px] text-slate-400 flex items-center justify-center font-mono truncate px-2">
+                ycalidraw.aryan-s-nag.workers.dev/&hellip;
               </div>
             </div>
             {/* Mockup Body */}

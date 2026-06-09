@@ -11,7 +11,6 @@ const STORAGE_KEY = "ycal_drawings";
 
 export function getAllDrawings(): DrawingMeta[] {
   const data = localStorage.getItem(STORAGE_KEY);
-  console.log("local storage ka data", data ? JSON.parse(data) : "no data")
   return data ? JSON.parse(data) : [];
 }
 
@@ -45,15 +44,18 @@ export function updateDrawingTimestamp(id: string) {
   saveAllDrawings(updated);
 }
 
-export async function deleteDrawing(id: string) {
-  const list = getAllDrawings().filter((d) => d.id !== id);
-  // make the api call to delete the durable object
-  const resp = await fetch("https:/ycalidraw.aryan-s-nag.workers.dev/api/delete/" + id, {
-    // const resp = await fetch("http://localhost:5173/api/delete/" + id, {
-    method: "DELETE"
-  })
-  console.log(resp)
-  console.log(await resp.json())
+export function upsertDrawing(meta: DrawingMeta) {
+  const list = getAllDrawings();
+  const idx = list.findIndex((d) => d.id === meta.id);
+  if (idx === -1) {
+    list.push(meta);
+  } else {
+    list[idx] = { ...list[idx], ...meta };
+  }
   saveAllDrawings(list);
+}
 
+export async function deleteDrawing(id: string) {
+  saveAllDrawings(getAllDrawings().filter((d) => d.id !== id));
+  await fetch(`/api/delete/${id}`, { method: "DELETE" });
 }

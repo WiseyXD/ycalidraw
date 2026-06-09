@@ -6,8 +6,6 @@ import App from "./App";
 import { Toaster } from "sonner";
 import { Ycalidraw } from "./components/Ycalidraw";
 
-//Check this
-
 const router = createBrowserRouter([
   {
     path: "/",
@@ -18,10 +16,10 @@ const router = createBrowserRouter([
     element: <Ycalidraw />,
   },
 ]);
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <RouterProvider router={router} />,
+    <RouterProvider router={router} />
     <Toaster />
-  </StrictMode>
-
+  </StrictMode>,
 );

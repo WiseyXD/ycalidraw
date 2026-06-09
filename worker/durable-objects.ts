@@ -1,100 +1,138 @@
 import { DurableObject } from "cloudflare:workers";
 
-
 export interface Env {
   DURABLE_OBJECT: DurableObjectNamespace;
 }
 
+const DEFAULT_ROOM_NAME = "Untitled drawing";
 
-// Durable Object
+const PALETTE = [
+  "#FF6B6B",
+  "#4ECDC4",
+  "#FFD93D",
+  "#6BCF7F",
+  "#A29BFE",
+  "#FD79A8",
+  "#FDCB6E",
+  "#74B9FF",
+];
+
+type SessionMeta = {
+  id: string;
+  clientId?: string;
+  username?: string;
+  color?: string;
+};
+
 export class YcalidrawWebSocketServer extends DurableObject {
-  sessions: Map<WebSocket, { [key: string]: string }>;
+  sessions: Map<WebSocket, SessionMeta>;
   elements: any[] = [];
+  name: string = DEFAULT_ROOM_NAME;
+  createdAt: number = 0;
+  updatedAt: number = 0;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.sessions = new Map();
 
-    // `blockConcurrencyWhile()` ensures no requests are delivered until
-    // initialization completes.
     ctx.blockConcurrencyWhile(async () => {
-      // After initialization, future reads do not need to access storage.
-      this.elements = (await ctx.storage.get("elements")) || [];
-      console.log("elemtns saved ?", this.elements);
-    });
+      this.elements = (await ctx.storage.get<any[]>("elements")) ?? [];
 
-    // As part of constructing the Durable Object,
-    // we wake up any hibernating WebSockets and
-    // place them back in the `sessions` map.
-
-    // Get all WebSocket connections from the DO
-    this.ctx.getWebSockets().forEach((ws) => {
-      let attachment = ws.deserializeAttachment();
-      if (attachment) {
-        // If we previously attached state to our WebSocket,
-        // let's add it to `sessions` map to restore the state of the connection.
-        this.sessions.set(ws, { ...attachment });
+      const storedName = await ctx.storage.get<string>("name");
+      if (storedName === undefined) {
+        const now = Date.now();
+        this.name = DEFAULT_ROOM_NAME;
+        this.createdAt = now;
+        this.updatedAt = now;
+        await ctx.storage.put({
+          name: this.name,
+          createdAt: this.createdAt,
+          updatedAt: this.updatedAt,
+        });
+      } else {
+        this.name = storedName;
+        this.createdAt = (await ctx.storage.get<number>("createdAt"))!;
+        this.updatedAt = (await ctx.storage.get<number>("updatedAt"))!;
       }
     });
 
-    // Sets an application level auto response that does not wake hibernated WebSockets.
+    this.ctx.getWebSockets().forEach((ws) => {
+      const attachment = ws.deserializeAttachment() as SessionMeta | undefined;
+      if (attachment) this.sessions.set(ws, attachment);
+    });
+
     this.ctx.setWebSocketAutoResponse(
       new WebSocketRequestResponsePair("ping", "pong"),
     );
-  }
-
-  async getAllElements() {
-    return { data: this.elements };
   }
 
   async clearDo() {
     await this.ctx.storage.deleteAll();
     await this.ctx.storage.deleteAlarm();
     this.elements = [];
+    this.name = DEFAULT_ROOM_NAME;
+    const now = Date.now();
+    this.createdAt = now;
+    this.updatedAt = now;
+    const msg = JSON.stringify({ type: "deleted" });
+    this.sessions.forEach((_meta, ws) => {
+      try {
+        ws.send(msg);
+      } catch {}
+      try {
+        ws.close(1000, "room deleted");
+      } catch {}
+    });
+    this.sessions.clear();
     return { cleared: true };
   }
 
+  private pickColor(): string {
+    const used = new Set<string>();
+    for (const meta of this.sessions.values()) {
+      if (meta.color) used.add(meta.color);
+    }
+    for (const color of PALETTE) {
+      if (!used.has(color)) return color;
+    }
+    return PALETTE[this.sessions.size % PALETTE.length];
+  }
+
+  private broadcastExcept(senderWs: WebSocket, payload: unknown) {
+    const message = JSON.stringify(payload);
+    this.sessions.forEach((_meta, ws) => {
+      if (ws !== senderWs) ws.send(message);
+    });
+  }
+
   async fetch(request: Request): Promise<Response> {
-    // DELETE /api/delete inside the DO
     if (request.method === "DELETE") {
       const result = await this.clearDo();
       return new Response(JSON.stringify(result), {
         status: 200,
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Creates two ends of a WebSocket connection.
     const webSocketPair = new WebSocketPair();
     const [client, server] = Object.values(webSocketPair);
 
-    // Calling `acceptWebSocket()` informs the runtime that this WebSocket is to begin terminating
-    // request within the Durable Object. It has the effect of "accepting" the connection,
-    // and allowing the WebSocket to send and receive messages.
-    // Unlike `ws.accept()`, `this.ctx.acceptWebSocket(ws)` informs the Workers Runtime that the WebSocket
-    // is "hibernatable", so the runtime does not need to pin this Durable Object to memory while
-    // the connection is open. During periods of inactivity, the Durable Object can be evicted
-    // from memory, but the WebSocket connection will remain open. If at some later point the
-    // WebSocket receives a message, the runtime will recreate the Durable Object
-    // (run the `constructor`) and deliver the message to the appropriate handler.
     this.ctx.acceptWebSocket(server);
 
-    // Generate a random UUID for the session.
-    const id = crypto.randomUUID();
+    const meta: SessionMeta = { id: crypto.randomUUID() };
+    server.serializeAttachment(meta);
+    this.sessions.set(server, meta);
 
-    // Attach the session ID to the WebSocket connection and serialize it.
-    // This is necessary to restore the state of the connection when the Durable Object wakes up.
-    server.serializeAttachment({ id });
-
-    // Add the WebSocket connection to the map of active sessions.
-    this.sessions.set(server, { id });
-
-    //  Send initial state to the newly connected client
     server.send(
       JSON.stringify({
         type: "initialState",
-        data: this.elements, // latest saved elements
-      })
+        data: {
+          elements: this.elements,
+          name: this.name,
+          createdAt: this.createdAt,
+          updatedAt: this.updatedAt,
+        },
+      }),
     );
 
     return new Response(null, {
@@ -104,50 +142,92 @@ export class YcalidrawWebSocketServer extends DurableObject {
   }
 
   async webSocketMessage(ws: WebSocket, message: string) {
-    // Get the session associated with the WebSocket connection.
-    // const session = this.sessions.get(ws)!;
+    let event: { type: string; data: any };
+    try {
+      event = JSON.parse(message);
+    } catch {
+      return;
+    }
 
-    // Upon receiving a message from the client, the server replies with the same message, the session ID of the connection,
-    // and the total number of connections with the "[Durable Object]: " prefix
-    // ws.send(
-    //   `[Durable Object] message: ${message}, from: ${session.id}, to: the initiating client. Total connections: ${this.sessions.size}`,
-    // );
+    if (event.type === "hello") {
+      const meta = this.sessions.get(ws);
+      if (!meta) return;
+      const clientId: string = event.data.clientId;
+      const username: string = event.data.username ?? "Anonymous";
+      const color = this.pickColor();
+      meta.clientId = clientId;
+      meta.username = username;
+      meta.color = color;
+      ws.serializeAttachment(meta);
 
-    // Send a message to all WebSocket connections, loop over all the connected WebSockets.
-    // this.sessions.forEach((attachment, connectedWs) => {
-    //   connectedWs.send(
-    //     `[Durable Object] message: ${message}, from: ${session.id}, to: all clients. Total connections: ${this.sessions.size}`,
-    //   );
-    // });
+      const peers: Array<{ clientId: string; username: string; color: string }> = [];
+      this.sessions.forEach((other, otherWs) => {
+        if (otherWs === ws) return;
+        if (other.clientId && other.color) {
+          peers.push({
+            clientId: other.clientId,
+            username: other.username ?? "Anonymous",
+            color: other.color,
+          });
+        }
+      });
 
-    // Send a message to all WebSocket connections except the connection (ws),
-    // loop over all the connected WebSockets and filter out the connection (ws).
+      ws.send(
+        JSON.stringify({
+          type: "presenceInit",
+          data: { yourColor: color, peers },
+        }),
+      );
 
-    this.sessions.forEach((attachment, connectedWs) => {
-      if (connectedWs !== ws) {
-        connectedWs.send(
-          // `[Durable Object] message: ${message}, from: ${session.id}, to: all clients except the initiating client. Total connections: ${this.sessions.size}`,
-          message,
-        );
-      }
-    });
-    const event = JSON.parse(message);
-    const { type, data } = event;
-    if (type === "elementChange") {
-      console.log(data);
-      this.elements = data;
-      this.ctx.storage.put("elements", this.elements);
+      this.broadcastExcept(ws, {
+        type: "presenceJoin",
+        data: { clientId, username, color },
+      });
+      return;
+    }
+
+    if (event.type === "elementChange") {
+      this.elements = event.data;
+      this.updatedAt = Date.now();
+      this.ctx.storage.put({
+        elements: this.elements,
+        updatedAt: this.updatedAt,
+      });
+      this.broadcastExcept(ws, event);
+      return;
+    }
+
+    if (event.type === "rename") {
+      const newName = String(event.data?.name ?? "").trim();
+      if (!newName) return;
+      this.name = newName;
+      this.updatedAt = Date.now();
+      await this.ctx.storage.put({
+        name: this.name,
+        updatedAt: this.updatedAt,
+      });
+      this.broadcastExcept(ws, {
+        type: "rename",
+        data: { name: this.name, updatedAt: this.updatedAt },
+      });
+      return;
+    }
+
+    if (event.type === "pointer") {
+      this.broadcastExcept(ws, event);
+      return;
     }
   }
 
-  async webSocketClose(
-    ws: WebSocket,
-    code: number,
-    reason: string,
-    wasClean: boolean,
-  ) {
-    // If the client closes the connection, the runtime will invoke the webSocketClose() handler.
+  async webSocketClose(ws: WebSocket, code: number, _reason: string) {
+    const meta = this.sessions.get(ws);
     this.sessions.delete(ws);
+    if (meta?.clientId) {
+      this.broadcastExcept(ws, {
+        type: "presenceLeave",
+        data: { clientId: meta.clientId },
+      });
+    }
     ws.close(code, "Durable Object is closing WebSocket");
   }
 }
