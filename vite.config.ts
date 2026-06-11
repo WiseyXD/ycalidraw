@@ -12,5 +12,5 @@ export default defineConfig({
       "@": new URL("./src", import.meta.url).pathname
     },
   },
-  server: { host: true },
+  server: { host: true, watch: { ignored: ['**/.claude/**'] } },
 });
